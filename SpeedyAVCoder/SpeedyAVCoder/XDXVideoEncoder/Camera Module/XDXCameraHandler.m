@@ -27,7 +27,9 @@
 #pragma mark - Public
 #pragma mark Main Method
 - (void)startRunning {
-    [self.session startRunning];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self.session startRunning];
+    });
 }
 
 - (void)stopRunning {
@@ -50,20 +52,6 @@
                                                          bySession:session
                                                           position:model.position
                                                        videoFormat:model.videoFormat];
-    
-    // Set torch mode
-    if ([device hasTorch]) {
-        [device lockForConfiguration:&error];
-        if ([device isTorchModeSupported:model.torchMode]) {
-            device.torchMode = model.torchMode;
-            [device addObserver:self forKeyPath:@"torchMode" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
-        }else {
-            NSLog(@"The device not support current torch mode : %ld!",model.torchMode);
-        }
-        [device unlockForConfiguration];
-    }else {
-        NSLog(@"The device not support torch!");
-    }
     
     // Set focus mode
     if ([device isFocusModeSupported:model.focusMode]) {
@@ -806,16 +794,5 @@
         [self.delegate xdxCaptureOutput:output didOutputSampleBuffer:sampleBuffer fromConnection:connection];
     }
 }
-
-#pragma mark - KVO
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if ([keyPath isEqualToString:@"torchMode"]) {
-        if ([change objectForKey:NSKeyValueChangeNewKey] != nil) {
-            //            [self adjustFlash:[[change objectForKey:NSKeyValueChangeNewKey] intValue]];
-        }
-    }
-}
-
-#pragma mark - Other
 
 @end
